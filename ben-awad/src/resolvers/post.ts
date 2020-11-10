@@ -1,6 +1,7 @@
 import { Post } from '../entities/Post'
 import { Arg, Ctx, Int, Mutation, Query, Resolver } from "type-graphql";
 import { MyContext } from 'src/types';
+import { NullHighlighter } from '@mikro-orm/core';
 
 @Resolver()
 export class PostResolver {
@@ -26,4 +27,17 @@ export class PostResolver {
     await em.persistAndFlush(post)
     return post;
   }
+
+  @Mutation(() => Post, {nullable: true})
+  async updatePost(
+    @Arg("id") id: number,
+    @Arg("title") title: string,
+    @Ctx() { em }: MyContext
+  ): Promise<Post | null> {
+    const post = await em.findOne(Post, {id});
+    if (!post) return null;
+    post.title = title;
+    await em.persistAndFlush(post);
+    return post;
+
 } 
