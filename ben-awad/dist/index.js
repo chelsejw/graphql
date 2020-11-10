@@ -15,11 +15,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@mikro-orm/core");
 const Post_1 = require("./entities/Post");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
+const express_1 = __importDefault(require("express"));
+const apollo_server_express_1 = require("apollo-server-express");
+const type_graphql_1 = require("type-graphql");
+const hello_1 = require("./resolvers/hello");
+const app = express_1.default();
+const port = process.env.PORT || 5000;
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
+    const apolloServer = new apollo_server_express_1.ApolloServer({
+        schema: yield type_graphql_1.buildSchema({
+            resolvers: [hello_1.HelloResolver],
+            validate: false
+        })
+    });
+    apolloServer.applyMiddleware({ app });
     const posts = yield orm.em.find(Post_1.Post, {});
-    console.log(posts);
+    app.get(`/`, (_, res) => {
+        res.send(posts);
+    });
+    app.listen(port, () => {
+        console.log(`Server started on port ${port}`);
+    });
 });
 main()
     .catch(err => {
